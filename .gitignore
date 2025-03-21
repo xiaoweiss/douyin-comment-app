@@ -56,6 +56,8 @@ ms-playwright/
 # 排除所有隐藏目录和文件
 .*
 !/.gitignore
+!/.github/
+!/.github/workflows/
 
 # 白名单：明确包含必要文件
 !douyin_comment_gui.py
@@ -63,6 +65,7 @@ ms-playwright/
 !main.py
 !Info.plist
 !icon.ico
+!.github/workflows/build-windows.yml
 
 # 微信缓存
 /Users/xiaowei/Library/Containers/com.tencent.xinWeChat/
