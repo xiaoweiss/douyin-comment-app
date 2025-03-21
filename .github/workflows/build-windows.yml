@@ -30,7 +30,7 @@ jobs:
 
       - name: Build with PyInstaller
         run: |
-          pyinstaller douyin_comment.spec
+          pyinstaller --onefile --windowed --icon=icon.ico --name="抖音评论助手" douyin_comment_gui.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

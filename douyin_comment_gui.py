@@ -218,30 +218,11 @@ class DouyinCommentApp:
         
         try:
             async with async_playwright() as p:
-                self.log("正在连接系统浏览器...")
-                try:
-                    # 连接到已存在的Chrome实例
-                    browser = await p.chromium.connect_over_cdp(
-                        "http://localhost:9222",
-                        timeout=30000,
-                        headers={
-                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-                        }
-                    )
-                    self.log("✅ 已连接到系统浏览器")
-                except Exception as e:
-                    self.log(f"连接浏览器失败: {str(e)}")
-                    self.log("正在尝试启动新浏览器...")
-                    browser = await p.chromium.launch_persistent_context(
-                        user_data_dir=user_data_dir,
-                        channel="chrome",
-                        headless=False,
-                        args=[
-                            "--disable-blink-features=AutomationControlled",
-                            "--remote-debugging-port=9222"
-                        ],
-                        viewport={"width": 1280, "height": 800}
-                    )
+                self.log("正在启动新浏览器...")
+                browser = await p.chromium.launch(
+                    headless=False,
+                    args=['--disable-blink-features=AutomationControlled']  # 避免被检测为自动化
+                )
                 
                 # 获取或创建页面
                 page = browser.pages[0] if browser.pages else await browser.new_page()
@@ -259,17 +240,24 @@ class DouyinCommentApp:
                     self.log("检测到历史会话Cookie")
                 else:
                     self.log("未检测到登录信息，需要登录")
-                    await page.goto("https://www.douyin.com", wait_until="domcontentloaded", timeout=30000)
-                    await self.handle_login(page)
+                    if not await self.check_login(page):
+                        # 增加登录等待时间到3分钟
+                        login_timeout = 3 * 60 * 1000  # 3分钟，单位毫秒
+                        try:
+                            await page.wait_for_selector('.login-success-icon', timeout=login_timeout)
+                            self.log("登录成功")
+                        except Exception:
+                            self.log("登录等待超时，请确认是否已登录")
+                    await self.handle_popups(page)
                 
                 # 进入直播间
                 self.log(f"正在进入直播间...")
-                try:
-                    await page.goto(self.live_url.get(), wait_until="domcontentloaded", timeout=30000)
-                    self.log("直播间页面已加载")
-                    await asyncio.sleep(5)
-                except Exception as e:
-                    self.log(f"直播间加载异常: {e}")
+                await page.goto(self.live_url.get())
+                self.log("直播间页面已加载")
+                
+                # 等待页面稳定
+                self.log("等待页面完全加载...")
+                await asyncio.sleep(5)
                 
                 # 处理弹窗
                 await self.handle_popups(page)
@@ -311,12 +299,33 @@ class DouyinCommentApp:
     
     async def send_comments(self, page):
         try:
+            self.log("启动评论助手...")
+            self.log(f"准备进入直播间: {self.live_url.get()}")
+            
+            # 直接启动新浏览器，不尝试连接现有浏览器
+            p = await async_playwright().start()
+            self.log("正在启动新浏览器...")
+            browser = await p.chromium.launch(
+                headless=False,
+                args=['--disable-blink-features=AutomationControlled']  # 避免被检测为自动化
+            )
+            
+            page = await browser.new_page()
+            await page.goto(self.live_url.get())
+            self.log("直播间页面已加载")
+            
+            # 等待页面稳定
+            await asyncio.sleep(5)
+            
+            # 检查登录状态
+            # ...
+            
             self.log("正在查找评论框...")
             
             comment_box = await page.wait_for_selector(
                 'textarea.webcast-chatroom___textarea[placeholder="与大家互动一下..."]', 
                 state="visible", 
-                timeout=15000
+                timeout=30000
             )
             self.log("找到评论框")
             
@@ -344,14 +353,23 @@ class DouyinCommentApp:
                 
                 self.last_comment = comment
                 
-                # 输入评论
-                await comment_box.click()
+                # 确保评论框可见
+                await page.evaluate('window.scrollTo(0, document.body.scrollHeight)')
+                await asyncio.sleep(1)
+                
+                # 清空输入框
                 await page.fill('textarea.webcast-chatroom___textarea', "")
-                await page.type('textarea.webcast-chatroom___textarea', comment, delay=100)
+                await asyncio.sleep(0.5)
+                
+                # 输入评论，降低输入速度
+                await page.type('textarea.webcast-chatroom___textarea', comment, delay=150)
+                await asyncio.sleep(0.5)
                 
                 # 点击发送按钮或按回车
                 send_btn = await page.query_selector('.webcast-chatroom___send-btn')
                 if send_btn:
+                    await send_btn.hover()
+                    await asyncio.sleep(0.5)
                     await send_btn.click()
                     self.log(f"已发送评论: {comment} (按钮)")
                 else:
@@ -431,6 +449,22 @@ class DouyinCommentApp:
                 self.log(f"成功导入评论文件: {file_path}")
             except Exception as e:
                 self.log(f"文件导入失败: {str(e)}")
+
+    async def start_browser(self):
+        try:
+            p = await async_playwright().start()
+            self.log("正在启动浏览器...")
+            browser = await p.chromium.launch(headless=False)
+            return p, browser
+        except Exception as e:
+            self.log(f"启动浏览器失败: {e}")
+            return None, None
+
+    async def check_login(self, page):
+        # 实现检查登录状态的逻辑
+        # 返回True表示已登录，返回False表示未登录
+        # 这里需要根据实际情况实现
+        return False  # 临时返回，需要根据实际情况实现
 
 if __name__ == "__main__":
     root = tk.Tk()
