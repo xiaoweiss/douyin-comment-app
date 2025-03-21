@@ -1,0 +1,78 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.pytest_cache/
+
+# Build artifacts
+build/
+dist/
+*.spec
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Playwright browsers
+browser_profile/
+browser_data/
+ms-playwright/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs and databases
+*.log
+*.sqlite
+
+# Local development
+.env
+.env.local
+
+# 基础排除
+*
+!.gitignore
+*.py
+*.spec
+*.requirements.txt
+*.README.md
+
+# 严格排除所有二进制文件
+*.dll
+*.exe
+*.so
+*.dylib
+*.bin
+*.pak
+*.pdb
+*.lib
+*.obj
+*.zip
+*.tar.gz
+
+# 排除所有隐藏目录和文件
+.*
+!/.gitignore
+
+# 白名单：明确包含必要文件
+!douyin_comment_gui.py
+!douyin_comment.spec
+!main.py
+!Info.plist
+!icon.ico
+
+# 微信缓存
+/Users/xiaowei/Library/Containers/com.tencent.xinWeChat/
+
+# IDE配置
+.idea/
+
+# 浏览器缓存
+browser_profile/
+ms-playwright/
+
+# 系统文件
+.DS_Store 
