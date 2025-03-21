@@ -7,7 +7,10 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[],
-    hiddenimports=[],
+    hiddenimports=[
+        'playwright._impl._generated',
+        'playwright.async_api',
+    ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -33,14 +36,16 @@ else:
     browser_dir = ""
 
 if os.path.exists(browser_dir):
-    # 添加必要文件（正确格式）
-    a.datas += [
-        (os.path.join(browser_dir, 'chrome.exe'), os.path.join(browser_dir, 'chrome.exe'), 'DATA'),
-        (os.path.join(browser_dir, 'chrome_100_percent.pak'), os.path.join(browser_dir, 'chrome_100_percent.pak'), 'DATA'),
-        (os.path.join(browser_dir, 'chrome_200_percent.pak'), os.path.join(browser_dir, 'chrome_200_percent.pak'), 'DATA'),
-        (os.path.join(browser_dir, 'resources.pak'), os.path.join(browser_dir, 'resources.pak'), 'DATA'),
-        (os.path.join(browser_dir, 'v8_context_snapshot.bin'), os.path.join(browser_dir, 'v8_context_snapshot.bin'), 'DATA')
+    # 文件格式：(dest, source, 'DATA')
+    browser_files = [
+        ('chrome.exe', os.path.join(browser_dir, 'chrome.exe'), 'DATA'),
+        ('chrome_100_percent.pak', os.path.join(browser_dir, 'chrome_100_percent.pak'), 'DATA'),
+        ('chrome_200_percent.pak', os.path.join(browser_dir, 'chrome_200_percent.pak'), 'DATA'),
+        ('resources.pak', os.path.join(browser_dir, 'resources.pak'), 'DATA'),
+        ('v8_context_snapshot.bin', os.path.join(browser_dir, 'v8_context_snapshot.bin'), 'DATA'),
     ]
+    
+    a.datas.extend(browser_files)
 else:
     print(f"警告：Chromium路径不存在 {browser_dir}")
 
